@@ -1,7 +1,11 @@
 # Google Cluster Data
 
-Scripts for dumping the workload traces of a computer cluster [published][1] by
-Google into an SQLite database.
+The repository contains scripts for dumping the workload traces of a computer
+cluster [published][1] by Google into an SQLite database. The following tables
+are currently processed:
+
+* `job_events` and
+* `task_events`.
 
 ## Usage
 
