@@ -4,8 +4,9 @@ The repository contains scripts for dumping the workload traces of a computer
 cluster [published][1] by Google into an SQLite database. The following tables
 are currently processed:
 
-* `job_events` and
-* `task_events`.
+* `job_events`,
+* `task_events`, and
+* `task_usage`.
 
 ## Usage
 

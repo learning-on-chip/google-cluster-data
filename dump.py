@@ -37,6 +37,32 @@ setup_sql = {
             `disk space request` REAL,
             `different machines restriction` INTEGER
         );
+    """,
+
+    "task_usage": """
+        DROP TABLE IF EXISTS `task_usage`;
+        CREATE TABLE `task_usage` (
+            `start time` INTEGER NOT NULL,
+            `end time` INTEGER NOT NULL,
+            `job ID` INTEGER NOT NULL,
+            `task index` INTEGER NOT NULL,
+            `machine ID` INTEGER NOT NULL,
+            `CPU rate` REAL,
+            `canonical memory usage` REAL,
+            `assigned memory usage` REAL,
+            `unmapped page cache` REAL,
+            `total page cache` REAL,
+            `maximum memory usage` REAL,
+            `disk I/O time` REAL,
+            `local disk space usage` REAL,
+            `maximum CPU rate` REAL,
+            `maximum disk IO time` REAL,
+            `cycles per instruction` REAL,
+            `memory accesses per instruction` REAL,
+            `sample portion` REAL,
+            `aggregation type` BOOLEAN,
+            `sampled CPU usage` REA
+        );
     """
 }
 

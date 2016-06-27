@@ -1,4 +1,4 @@
-tables := job_events task_events
+tables := job_events task_events task_usage
 
 all: google.sqlite3
 
