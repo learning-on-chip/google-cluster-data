@@ -70,9 +70,6 @@ def fail(message):
     print(message)
     sys.exit(1)
 
-def setup_csv(table):
-    return '%s.cvs' % table
-
 def setup_sqlite(table):
     filename = 'google.sqlite3'
     if not table in setup_sql: fail('the table is unknown')
@@ -88,15 +85,6 @@ def find_parts(table):
 
 for table in sys.argv[1:]:
     sqlite = setup_sqlite(table)
-    csv = setup_csv(table)
-
-    for source in find_parts(table):
-        print('Processing %s...' % source)
-        f = open(csv, 'w')
-        p = subprocess.Popen(['gunzip', '-c', source], stdout=f)
-        p.wait()
-        f.close()
-        if p.returncode != 0: fail('cannot unpack an archive')
-        csv2sqlite.convert(csv, sqlite, table, 'header/%s.csv' % table)
-
-    os.remove(csv)
+    for csv in find_parts(table):
+        print('Processing %s...' % csv)
+        csv2sqlite.convert(csv, sqlite, table, 'header/%s.csv' % table, 'gzip')
