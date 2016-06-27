@@ -97,6 +97,6 @@ for table in sys.argv[1:]:
         p.wait()
         f.close()
         if p.returncode != 0: fail('cannot unpack an archive')
-        csv2sqlite.convert(csv, sqlite, table)
+        csv2sqlite.convert(csv, sqlite, table, 'header/%s.csv' % table)
 
     os.remove(csv)
