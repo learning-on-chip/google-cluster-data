@@ -87,16 +87,16 @@ def find_parts(table):
     return sorted(glob.glob(os.path.join(table, '*.csv.gz')))
 
 for table in sys.argv[1:]:
-  sqlite = setup_sqlite(table)
-  csv = setup_csv(table)
+    sqlite = setup_sqlite(table)
+    csv = setup_csv(table)
 
-  for source in find_parts(table):
-      print('Processing %s...' % source)
-      f = open(csv, 'w')
-      p = subprocess.Popen(['gunzip', '-c', source], stdout=f)
-      p.wait()
-      f.close()
-      if p.returncode != 0: fail('cannot unpack an archive')
-      csv2sqlite.convert(csv, sqlite, table)
+    for source in find_parts(table):
+        print('Processing %s...' % source)
+        f = open(csv, 'w')
+        p = subprocess.Popen(['gunzip', '-c', source], stdout=f)
+        p.wait()
+        f.close()
+        if p.returncode != 0: fail('cannot unpack an archive')
+        csv2sqlite.convert(csv, sqlite, table)
 
-  os.remove(csv)
+    os.remove(csv)
