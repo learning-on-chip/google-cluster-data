@@ -61,7 +61,7 @@ setup_sql = {
             `memory accesses per instruction` REAL,
             `sample portion` REAL,
             `aggregation type` BOOLEAN,
-            `sampled CPU usage` REA
+            `sampled CPU usage` REAL
         );
     """
 }
