@@ -53,14 +53,14 @@ setup_sql = {
             `unmapped page cache` REAL,
             `total page cache` REAL,
             `maximum memory usage` REAL,
-            `disk I/O time` REAL,
+            `disk IO time` REAL,
             `local disk space usage` REAL,
             `maximum CPU rate` REAL,
             `maximum disk IO time` REAL,
             `cycles per instruction` REAL,
             `memory accesses per instruction` REAL,
             `sample portion` REAL,
-            `aggregation type` BOOLEAN,
+            `aggregation type` INTEGER,
             `sampled CPU usage` REAL
         );
     """
