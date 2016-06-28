@@ -85,6 +85,8 @@ def find_parts(table):
 
 for table in sys.argv[1:]:
     sqlite = setup_sqlite(table)
+    headers = 'headers/%s.csv' % table
+    types = 'types/%s.csv' % table
     for csv in find_parts(table):
         print('Processing %s...' % csv)
-        csv2sqlite.convert(csv, sqlite, table, 'header/%s.csv' % table, 'gzip')
+        csv2sqlite.convert(csv, sqlite, table, headers, 'gzip', types)
