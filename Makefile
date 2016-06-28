@@ -16,7 +16,7 @@ gsutil.tar.gz:
 	curl https://storage.googleapis.com/pub/gsutil.tar.gz -o $@
 
 clean:
-	rm -f *.csv *.sqlite3 *.tar.gz
+	rm -f *.sqlite3 *.tar.gz
 	rm -rf $(tables)
 
 .PHONY: all clean
