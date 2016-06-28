@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import glob, os, subprocess, sys
+import glob, os, sqlite3, sys
 
 sys.path.append(os.path.abspath("csv2sqlite"))
 import csv2sqlite
@@ -72,12 +72,12 @@ def fail(message):
 
 def setup_sqlite(table):
     filename = 'google.sqlite3'
-    if not table in setup_sql: fail('the table is unknown')
-    sql = setup_sql[table]
-    p = subprocess.Popen(['sqlite3', filename], stdin=subprocess.PIPE)
-    p.communicate(input=bytes(sql))
-    p.wait()
-    if p.returncode != 0: fail('cannot set up the database')
+    connection = sqlite3.connect(filename)
+    cursor = connection.cursor()
+    for sql in setup_sql[table].split(';'):
+        cursor.execute(sql)
+    connection.commit()
+    connection.close()
     return filename
 
 def find_parts(table):
