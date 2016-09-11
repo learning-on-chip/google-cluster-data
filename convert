@@ -4,86 +4,81 @@ set -e
 
 database_path=google.sqlite3
 
+function join() {
+    local IFS=', ';
+    echo "$*";
+}
+
 function run() {
     echo "${1}" | sqlite3 "${database_path}"
 }
 
-create_job_events_sql='''
-    CREATE TABLE `job_events` (
-        `time` INTEGER NOT NULL,
-        `missing info` INTEGER,
-        `job ID` INTEGER NOT NULL,
-        `event type` INTEGER NOT NULL,
-        `user` TEXT,
-        `scheduling class` INTEGER,
-        `job name` TEXT,
-        `logical job name` TEXT
-    )
-'''
-
-create_task_events_sql='''
-    CREATE TABLE `task_events` (
-        `time` INTEGER NOT NULL,
-        `missing info` INTEGER,
-        `job ID` INTEGER NOT NULL,
-        `task index` INTEGER NOT NULL,
-        `machine ID` INTEGER,
-        `event type` INTEGER NOT NULL,
-        `user` TEXT,
-        `scheduling class` INTEGER,
-        `priority` INTEGER NOT NULL,
-        `CPU request` REAL,
-        `memory request` REAL,
-        `disk space request` REAL,
-        `different machines restriction` INTEGER
-    )
-'''
-
-create_task_usage_sql='''
-    CREATE TABLE `task_usage` (
-        `start time` INTEGER NOT NULL,
-        `end time` INTEGER NOT NULL,
-        `job ID` INTEGER NOT NULL,
-        `task index` INTEGER NOT NULL,
-        `machine ID` INTEGER NOT NULL,
-        `CPU rate` REAL,
-        `canonical memory usage` REAL,
-        `assigned memory usage` REAL,
-        `unmapped page cache` REAL,
-        `total page cache` REAL,
-        `maximum memory usage` REAL,
-        `disk IO time` REAL,
-        `local disk space usage` REAL,
-        `maximum CPU rate` REAL,
-        `maximum disk IO time` REAL,
-        `cycles per instruction` REAL,
-        `memory accesses per instruction` REAL,
-        `sample portion` REAL,
-        `aggregation type` INTEGER,
-        `sampled CPU usage` REAL
-    )
-'''
-
 table="${1}"
 
-case ${table} in
+case "${table}" in
     'job_events')
-        create_sql="${create_job_events_sql}"
+        fields=(
+            '`time` INTEGER NOT NULL'
+            '`missing info` INTEGER'
+            '`job ID` INTEGER NOT NULL'
+            '`event type` INTEGER NOT NULL'
+            '`user` TEXT'
+            '`scheduling class` INTEGER'
+            '`job name` TEXT'
+            '`logical job name` TEXT'
+        )
     ;;
     'task_events')
-        create_sql="${create_task_events_sql}"
+        fields=(
+            '`time` INTEGER NOT NULL'
+            '`missing info` INTEGER'
+            '`job ID` INTEGER NOT NULL'
+            '`task index` INTEGER NOT NULL'
+            '`machine ID` INTEGER'
+            '`event type` INTEGER NOT NULL'
+            '`user` TEXT'
+            '`scheduling class` INTEGER'
+            '`priority` INTEGER NOT NULL'
+            '`CPU request` REAL'
+            '`memory request` REAL'
+            '`disk space request` REAL'
+            '`different machines restriction` INTEGER'
+        )
     ;;
     'task_usage')
-        create_sql="${create_task_usage_sql}"
+        fields=(
+            '`start time` INTEGER NOT NULL'
+            '`end time` INTEGER NOT NULL'
+            '`job ID` INTEGER NOT NULL'
+            '`task index` INTEGER NOT NULL'
+            '`machine ID` INTEGER NOT NULL'
+            '`CPU rate` REAL'
+            '`canonical memory usage` REAL'
+            '`assigned memory usage` REAL'
+            '`unmapped page cache` REAL'
+            '`total page cache` REAL'
+            '`maximum memory usage` REAL'
+            '`disk IO time` REAL'
+            '`local disk space usage` REAL'
+            '`maximum CPU rate` REAL'
+            '`maximum disk IO time` REAL'
+            '`cycles per instruction` REAL'
+            '`memory accesses per instruction` REAL'
+            '`sample portion` REAL'
+            '`aggregation type` INTEGER'
+            '`sampled CPU usage` REAL'
+        )
     ;;
     *)
         echo 'No table is given, or it is unknown.' && exit -1
     ;;
 esac
 
+run "DROP TABLE IF EXISTS \`${table}\`;"
+run "CREATE TABLE \`${table}\` ($(join "${fields[@]}"));"
+
 parts=$(find ${table} -name '*.csv.gz' | sort)
 
-run "DROP TABLE IF EXISTS \`${table}\`; ${create_sql};"
 for part in ${parts}; do
     echo "Processing ${part}..."
     gunzip -c "${part}" > "${part%.gz}"
