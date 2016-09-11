@@ -3,14 +3,16 @@ tables := job_events task_events task_usage
 all: google.sqlite3
 
 google.sqlite3: $(addsuffix /.done,$(tables))
-	./dump.py $(tables)
+	for table in $(tables); do \
+		./convert $@ $$table; \
+	done
 
 %/.done: gsutil/gsutil
-	$^ -m cp -R gs://clusterdata-2011-2/$* .
+	$< -m cp -R gs://clusterdata-2011-2/$* .
 	touch $@
 
 gsutil/gsutil: gsutil.tar.gz
-	tar -xzf gsutil.tar.gz
+	tar -xzf $<
 
 gsutil.tar.gz:
 	curl https://storage.googleapis.com/pub/gsutil.tar.gz -o $@
