@@ -2,7 +2,9 @@
 
 set -e
 
-database_path=google.sqlite3
+database="${1}"
+table="${2}"
+ids="${3}"
 
 function join() {
     local IFS="${1}";
@@ -11,11 +13,8 @@ function join() {
 }
 
 function run() {
-    echo "${1}" | sqlite3 "${database_path}"
+    echo "${1}" | sqlite3 "${database}"
 }
-
-table="${1}"
-ids="${2}"
 
 case "${table}" in
     'job_events')
