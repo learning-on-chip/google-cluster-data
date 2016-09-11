@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 
-import glob, os, sqlite3, sys
+import glob, os, sqlite3, subprocess, sys
 
-sys.path.append(os.path.abspath("csv2sqlite"))
-import csv2sqlite
-
-setup_sql = {
-    "job_events": """
+schema = {
+    'job_events': """
         DROP TABLE IF EXISTS `job_events`;
         CREATE TABLE `job_events` (
             `time` INTEGER NOT NULL,
@@ -20,7 +17,7 @@ setup_sql = {
         );
     """,
 
-    "task_events": """
+    'task_events': """
         DROP TABLE IF EXISTS `task_events`;
         CREATE TABLE `task_events` (
             `time` INTEGER NOT NULL,
@@ -39,7 +36,7 @@ setup_sql = {
         );
     """,
 
-    "task_usage": """
+    'task_usage': """
         DROP TABLE IF EXISTS `task_usage`;
         CREATE TABLE `task_usage` (
             `start time` INTEGER NOT NULL,
@@ -66,27 +63,19 @@ setup_sql = {
     """
 }
 
-def fail(message):
-    print(message)
-    sys.exit(1)
-
-def setup_sqlite(table):
-    filename = 'google.sqlite3'
-    connection = sqlite3.connect(filename)
-    cursor = connection.cursor()
-    for sql in setup_sql[table].split(';'):
-        cursor.execute(sql)
-    connection.commit()
-    connection.close()
-    return filename
-
-def find_parts(table):
-    return sorted(glob.glob(os.path.join(table, '*.csv.gz')))
-
+sqlite3_path = 'google.sqlite3'
 for table in sys.argv[1:]:
-    sqlite = setup_sqlite(table)
-    headers = 'headers/%s.csv' % table
-    types = 'types/%s.csv' % table
-    for csv in find_parts(table):
-        print('Processing %s...' % csv)
-        csv2sqlite.convert(csv, sqlite, table, headers, 'gzip', types)
+    sqlite3 = subprocess.Popen(['sqlite3', sqlite3_path], stdin=subprocess.PIPE)
+    sqlite3.communicate(input=schema[table])
+    sqlite3.wait()
+    for csv_gz_path in sorted(glob.glob(os.path.join(table, '*.csv.gz'))):
+        print('Processing %s...' % csv_gz_path)
+        csv_path = csv_gz_path.replace('.gz', '')
+        csv_file = open(csv_path, 'w')
+        gunzip = subprocess.Popen(['gunzip', '-c', csv_gz_path], stdout=csv_file)
+        gunzip.wait()
+        csv_file.close()
+        sqlite3 = subprocess.Popen(['sqlite3', sqlite3_path], stdin=subprocess.PIPE)
+        sqlite3.communicate('.mode csv\n.import {} {}\n'.format(csv_path, table))
+        sqlite3.wait()
+        os.remove(csv_path)
