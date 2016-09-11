@@ -5,7 +5,8 @@ set -e
 database_path=google.sqlite3
 
 function join() {
-    local IFS=', ';
+    local IFS="${1}";
+    shift;
     echo "$*";
 }
 
@@ -14,10 +15,11 @@ function run() {
 }
 
 table="${1}"
+ids="${2}"
 
 case "${table}" in
     'job_events')
-        fields=(
+        columns=(
             '`time` INTEGER NOT NULL'
             '`missing info` INTEGER'
             '`job ID` INTEGER NOT NULL'
@@ -29,7 +31,7 @@ case "${table}" in
         )
     ;;
     'task_events')
-        fields=(
+        columns=(
             '`time` INTEGER NOT NULL'
             '`missing info` INTEGER'
             '`job ID` INTEGER NOT NULL'
@@ -46,7 +48,7 @@ case "${table}" in
         )
     ;;
     'task_usage')
-        fields=(
+        columns=(
             '`start time` INTEGER NOT NULL'
             '`end time` INTEGER NOT NULL'
             '`job ID` INTEGER NOT NULL'
@@ -74,14 +76,26 @@ case "${table}" in
     ;;
 esac
 
+if [ -z "${ids}" ]; then
+    count=${#columns[@]}
+    ids=($(seq ${count}))
+else
+    ids=(${ids})
+    count=${#ids[@]}
+fi
+
+for i in $(seq ${count}); do
+    subcolumns[${i} - 1]=${columns[${ids[${i} - 1]} - 1]}
+done
+
 run "DROP TABLE IF EXISTS \`${table}\`;"
-run "CREATE TABLE \`${table}\` ($(join "${fields[@]}"));"
+run "CREATE TABLE \`${table}\` ($(join ', ' "${subcolumns[@]}"));"
 
 parts=$(find ${table} -name '*.csv.gz' | sort)
 
 for part in ${parts}; do
     echo "Processing ${part}..."
-    gunzip -c "${part}" > "${part%.gz}"
+    gunzip -c "${part}" | cut -d',' -f$(join ',' ${ids[@]}) > "${part%.gz}"
     run """
 .mode csv
 .import ${part%.gz} ${table}
