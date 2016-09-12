@@ -28,7 +28,7 @@ case "${table}" in
             '`job name` TEXT'
             '`logical job name` TEXT'
         )
-    ;;
+        ;;
     'task_events')
         columns=(
             '`time` INTEGER NOT NULL'
@@ -45,7 +45,7 @@ case "${table}" in
             '`disk space request` REAL'
             '`different machines restriction` INTEGER'
         )
-    ;;
+        ;;
     'task_usage')
         columns=(
             '`start time` INTEGER NOT NULL'
@@ -69,10 +69,10 @@ case "${table}" in
             '`aggregation type` INTEGER'
             '`sampled CPU usage` REAL'
         )
-    ;;
+        ;;
     *)
         echo 'No table is given, or it is unknown.' && exit -1
-    ;;
+        ;;
 esac
 
 if [ -z "${ids}" ]; then
