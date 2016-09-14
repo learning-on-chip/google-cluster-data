@@ -2,9 +2,9 @@
 
 set -e
 
-database="${1}"
-table="${2}"
-ids="${3}"
+database_path="${1}"
+table_name="${2}"
+column_indices="${3}"
 
 function join() {
     local IFS="${1}";
@@ -12,13 +12,13 @@ function join() {
     echo "$*";
 }
 
-function query() {
+function execute() {
     echo "${2}" | sqlite3 "${1}"
 }
 
-case "${table}" in
+case "${table_name}" in
     'job_events')
-        columns=(
+        all_column_definitions=(
             '`time` INTEGER NOT NULL'
             '`missing info` INTEGER'
             '`job ID` INTEGER NOT NULL'
@@ -30,7 +30,7 @@ case "${table}" in
         )
         ;;
     'task_events')
-        columns=(
+        all_column_definitions=(
             '`time` INTEGER NOT NULL'
             '`missing info` INTEGER'
             '`job ID` INTEGER NOT NULL'
@@ -47,7 +47,7 @@ case "${table}" in
         )
         ;;
     'task_usage')
-        columns=(
+        all_column_definitions=(
             '`start time` INTEGER NOT NULL'
             '`end time` INTEGER NOT NULL'
             '`job ID` INTEGER NOT NULL'
@@ -75,29 +75,36 @@ case "${table}" in
         ;;
 esac
 
-if [ -z "${ids}" ]; then
-    count=${#columns[@]}
-    ids=($(seq ${count}))
+if [ -z "${column_indices}" ]; then
+    column_count=${#all_column_definitions[@]}
+    column_indices=($(seq ${column_count}))
 else
-    ids=(${ids})
-    count=${#ids[@]}
+    column_indices=(${column_indices})
+    column_count=${#column_indices[@]}
 fi
 
-for i in $(seq ${count}); do
-    subcolumns[${i} - 1]=${columns[${ids[${i} - 1]} - 1]}
+for i in $(seq ${column_count}); do
+    column_definitions[${i} - 1]=${all_column_definitions[${column_indices[${i} - 1]} - 1]}
 done
 
-query "${database}" "DROP TABLE IF EXISTS \`${table}\`;"
-query "${database}" "CREATE TABLE \`${table}\` ($(join ', ' "${subcolumns[@]}"));"
+temporary_path="${table_name}.csv"
 
-parts=$(find ${table} -name '*.csv.gz' | sort)
+setup_query="""
+DROP TABLE IF EXISTS \`${table_name}\`;
+CREATE TABLE \`${table_name}\` ($(join ', ' "${column_definitions[@]}"));
+"""
 
+write_query="""
+.mode csv
+.import ${temporary_path} ${table_name}
+"""
+
+execute "${database_path}" "${setup_query}"
+
+parts=$(find ${table_name} -name '*.csv.gz' | sort)
 for part in ${parts}; do
     echo "Processing ${part}..."
-    gunzip -c "${part}" | cut -d',' -f$(join ',' ${ids[@]}) > "${part%.gz}"
-    query "${database}" """
-.mode csv
-.import ${part%.gz} ${table}
-"""
-    rm "${part%.gz}"
+    gunzip -c "${part}" | cut -d',' -f$(join ',' ${column_indices[@]}) > "${temporary_path}"
+    execute "${database_path}" "${write_query}"
+    rm "${temporary_path}"
 done
