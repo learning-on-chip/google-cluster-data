@@ -13,7 +13,7 @@ function join() {
 }
 
 function run() {
-    echo "${1}" | sqlite3 "${database}"
+    echo "${2}" | sqlite3 "${1}"
 }
 
 case "${table}" in
@@ -87,15 +87,15 @@ for i in $(seq ${count}); do
     subcolumns[${i} - 1]=${columns[${ids[${i} - 1]} - 1]}
 done
 
-run "DROP TABLE IF EXISTS \`${table}\`;"
-run "CREATE TABLE \`${table}\` ($(join ', ' "${subcolumns[@]}"));"
+run "${database}" "DROP TABLE IF EXISTS \`${table}\`;"
+run "${database}" "CREATE TABLE \`${table}\` ($(join ', ' "${subcolumns[@]}"));"
 
 parts=$(find ${table} -name '*.csv.gz' | sort)
 
 for part in ${parts}; do
     echo "Processing ${part}..."
     gunzip -c "${part}" | cut -d',' -f$(join ',' ${ids[@]}) > "${part%.gz}"
-    run """
+    run "${database}" """
 .mode csv
 .import ${part%.gz} ${table}
 """
