@@ -87,7 +87,7 @@ for i in $(seq ${column_count}); do
     column_definitions[${i} - 1]=${all_column_definitions[${column_indices[${i} - 1]} - 1]}
 done
 
-temporary_path="${table_name}.csv"
+temporary_path="${table_name}.tmp"
 
 setup_query="""
 DROP TABLE IF EXISTS \`${table_name}\`;
@@ -99,12 +99,17 @@ write_query="""
 .import ${temporary_path} ${table_name}
 """
 
-execute "${database_path}" "${setup_query}"
+if [ ! -z "${database_path}" ]; then
+    execute "${database_path}" "${setup_query}"
+fi
 
-parts=$(find ${table_name} -name '*.csv.gz' | sort)
-for part in ${parts}; do
-    echo "Processing ${part}..."
-    gunzip -c "${part}" | cut -d',' -f$(join ',' ${column_indices[@]}) > "${temporary_path}"
-    execute "${database_path}" "${write_query}"
+for part_path in $(find ${table_name} -name '*.csv.gz' | sort); do
+    echo "Processing ${part_path}..."
+    gunzip -c "${part_path}" | cut -d',' -f$(join ',' ${column_indices[@]}) > "${temporary_path}"
+    if [ ! -z "${database_path}" ]; then
+        execute "${database_path}" "${write_query}"
+    else
+        execute "${part_path%.csv.gz}.sqlite3" "${setup_query}${write_query}"
+    fi
     rm "${temporary_path}"
 done
