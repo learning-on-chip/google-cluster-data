@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -e
+
+table_name="${1}"
+
+function execute() {
+    echo "${2}" | sqlite3 "${1}"
+}
+
+case "${table_name}" in
+    'job_events')
+        ;;
+    'task_events')
+        ;;
+    'task_usage')
+        ;;
+    *)
+        echo 'No table is given, or it is unknown.' && exit -1
+        ;;
+esac
+
+sample_count_query="SELECT COUNT(*) FROM \`${table_name}\`;"
+job_count_query="SELECT COUNT(DISTINCT \`job ID\`) FROM \`${table_name}\`;"
+
+for part_path in $(find ${table_name} -name '*.sqlite3' | sort); do
+    sample_count=$(execute "${part_path}" "${sample_count_query}")
+    job_count=$(execute "${part_path}" "${job_count_query}")
+    echo "${part_path}: ${sample_count} ${job_count}"
+done
