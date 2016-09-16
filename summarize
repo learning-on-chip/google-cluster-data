@@ -11,9 +11,11 @@ function execute() {
 function task_usage() {
     sample_count_query="SELECT COUNT(*) FROM \`${table_name}\`;"
     job_count_query="SELECT COUNT(DISTINCT \`job ID\`) FROM \`${table_name}\`;"
+    task_count_query="SELECT COUNT(*) FROM (SELECT COUNT(*) FROM \`${table_name}\` GROUP BY \`job ID\`, \`task index\`);"
     sample_count=$(execute "${1}" "${sample_count_query}")
     job_count=$(execute "${1}" "${job_count_query}")
-    echo "${1}: ${sample_count} ${job_count}"
+    task_count=$(execute "${1}" "${task_count_query}")
+    echo "${1}: ${sample_count} ${job_count} ${task_count}"
 }
 
 case "${table_name}" in
