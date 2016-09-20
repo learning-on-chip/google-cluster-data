@@ -8,6 +8,16 @@ function execute() {
     echo "${2}" | sqlite3 "${1}"
 }
 
+function job_events() {
+    sample_count_query="SELECT COUNT(*) FROM \`${table_name}\`;"
+    job_count_query="SELECT COUNT(DISTINCT \`job ID\`) FROM \`${table_name}\`;"
+    user_count_query="SELECT COUNT(DISTINCT \`user\`) FROM \`${table_name}\`;"
+    sample_count=$(execute "${1}" "${sample_count_query}")
+    job_count=$(execute "${1}" "${job_count_query}")
+    user_count=$(execute "${1}" "${user_count_query}")
+    echo "${1}: ${sample_count} ${job_count} ${user_count}"
+}
+
 function task_usage() {
     sample_count_query="SELECT COUNT(*) FROM \`${table_name}\`;"
     job_count_query="SELECT COUNT(DISTINCT \`job ID\`) FROM \`${table_name}\`;"
@@ -19,6 +29,8 @@ function task_usage() {
 }
 
 case "${table_name}" in
+    'job_events')
+        ;;
     'task_usage')
         ;;
     *)
