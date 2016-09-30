@@ -16,64 +16,7 @@ function execute() {
     echo "${2}" | sqlite3 "${1}"
 }
 
-case "${table_name}" in
-    'job_events')
-        all_column_definitions=(
-            '`time` INTEGER NOT NULL'
-            '`missing info` INTEGER'
-            '`job ID` INTEGER NOT NULL'
-            '`event type` INTEGER NOT NULL'
-            '`user` TEXT'
-            '`scheduling class` INTEGER'
-            '`job name` TEXT'
-            '`logical job name` TEXT'
-        )
-        ;;
-    'task_events')
-        all_column_definitions=(
-            '`time` INTEGER NOT NULL'
-            '`missing info` INTEGER'
-            '`job ID` INTEGER NOT NULL'
-            '`task index` INTEGER NOT NULL'
-            '`machine ID` INTEGER'
-            '`event type` INTEGER NOT NULL'
-            '`user` TEXT'
-            '`scheduling class` INTEGER'
-            '`priority` INTEGER NOT NULL'
-            '`CPU request` REAL'
-            '`memory request` REAL'
-            '`disk space request` REAL'
-            '`different machines restriction` INTEGER'
-        )
-        ;;
-    'task_usage')
-        all_column_definitions=(
-            '`start time` INTEGER NOT NULL'
-            '`end time` INTEGER NOT NULL'
-            '`job ID` INTEGER NOT NULL'
-            '`task index` INTEGER NOT NULL'
-            '`machine ID` INTEGER NOT NULL'
-            '`CPU rate` REAL'
-            '`canonical memory usage` REAL'
-            '`assigned memory usage` REAL'
-            '`unmapped page cache` REAL'
-            '`total page cache` REAL'
-            '`maximum memory usage` REAL'
-            '`disk IO time` REAL'
-            '`local disk space usage` REAL'
-            '`maximum CPU rate` REAL'
-            '`maximum disk IO time` REAL'
-            '`cycles per instruction` REAL'
-            '`memory accesses per instruction` REAL'
-            '`sample portion` REAL'
-            '`aggregation type` INTEGER'
-            '`sampled CPU usage` REAL'
-        )
-        ;;
-    *)
-        echo 'No table is given, or it is unknown.' && exit -1
-        ;;
-esac
+all_column_definitions=($(./describe.py ${table_name}))
 
 if [ -z "${column_indices}" ]; then
     column_count=${#all_column_definitions[@]}
