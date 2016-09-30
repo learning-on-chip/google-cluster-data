@@ -4,7 +4,7 @@ all: google.sqlite3
 
 google.sqlite3: $(addsuffix /.done,$(tables))
 	for table in $(tables); do \
-		./convert.sh $@ $$table; \
+		./bin/convert.sh $@ $$table; \
 	done
 
 %/.done: gsutil/gsutil

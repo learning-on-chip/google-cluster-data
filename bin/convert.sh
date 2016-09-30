@@ -2,6 +2,7 @@
 
 set -e
 
+bin_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 database_path="${1}"
 table_name="${2}"
 column_indices="${3}"
@@ -16,7 +17,7 @@ function execute() {
     echo "${2}" | sqlite3 "${1}"
 }
 
-all_column_definitions=($(./describe.py ${table_name}))
+all_column_definitions=($("${bin_path}/describe.py" ${table_name}))
 
 if [ -z "${column_indices}" ]; then
     column_count=${#all_column_definitions[@]}
