@@ -17,7 +17,7 @@ function execute() {
     echo "${2}" | sqlite3 "${1}"
 }
 
-all_column_definitions=($("${bin_path}/describe.py" ${table_name}))
+mapfile -t all_column_definitions < <("${bin_path}/describe.py" ${table_name})
 
 if [ -z "${column_indices}" ]; then
     column_count=${#all_column_definitions[@]}
