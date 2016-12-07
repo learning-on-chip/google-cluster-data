@@ -1,5 +1,5 @@
 [root]
-name = "fan"
+name = "distribute"
 version = "0.0.1"
 dependencies = [
  "arguments 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
