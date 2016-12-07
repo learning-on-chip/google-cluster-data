@@ -8,9 +8,9 @@ table_name="${2}"
 column_indices="${3}"
 
 function join() {
-    local IFS="${1}";
-    shift;
-    echo "$*";
+    local IFS="${1}"
+    shift
+    echo "$*"
 }
 
 function execute() {
