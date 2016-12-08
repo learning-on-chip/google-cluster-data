@@ -3,9 +3,10 @@
 set -e
 
 bin_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-database_path="${1}"
-table_name="${2}"
-column_indices="${3}"
+data_path="${1}"
+database_path="${2}"
+table_name="${3}"
+column_indices="${4}"
 
 function join() {
     local IFS="${1}"
@@ -17,7 +18,12 @@ function execute() {
     echo "${2}" | sqlite3 "${1}"
 }
 
-mapfile -t all_column_definitions < <("${bin_path}/describe.py" ${table_name})
+i=0
+declare -a all_column_definitions
+while IFS=$'\n' read -r line_data; do
+    all_column_definitions[i]="${line_data}"
+    ((i++))
+done < <("${bin_path}/describe.py" ${table_name})
 
 if [ -z "${column_indices}" ]; then
     column_count=${#all_column_definitions[@]}
@@ -31,7 +37,7 @@ for i in $(seq ${column_count}); do
     column_definitions[${i} - 1]=${all_column_definitions[${column_indices[${i} - 1]} - 1]}
 done
 
-temporary_path="${table_name}.tmp"
+temporary_path="${data_path}.tmp"
 
 setup_query="""
 DROP TABLE IF EXISTS \`${table_name}\`;
@@ -47,7 +53,7 @@ if [ ! -z "${database_path}" ]; then
     execute "${database_path}" "${setup_query}"
 fi
 
-for part_path in $(find ${table_name} -name '*.csv.gz' | sort); do
+for part_path in $(find "${data_path}" -name '*.csv.gz' | sort); do
     echo "Processing ${part_path}..."
     gunzip -c "${part_path}" | cut -d',' -f$(join ',' ${column_indices[@]}) > "${temporary_path}"
     if [ ! -z "${database_path}" ]; then

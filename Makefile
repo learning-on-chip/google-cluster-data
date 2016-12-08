@@ -1,14 +1,15 @@
-tables := job_events task_events task_usage
+TABLES ?= job_events task_events task_usage
 
-all: google.sqlite3
+all: result/database.sqlite3
 
-google.sqlite3: $(addsuffix /.done,${tables})
-	for table in ${tables}; do \
-		./bin/convert.sh $@ $${table}; \
+result/database.sqlite3: $(patsubst %,result/%/.done,${TABLES})
+	mkdir -p result
+	for table in ${TABLES}; do \
+		./bin/convert.sh result/$${table} $@ $${table}; \
 	done
 
-%/.done: bin/gsutil
-	$< -m cp -R gs://clusterdata-2011-2/$* .
+result/%/.done: bin/gsutil
+	$< -m cp -R gs://clusterdata-2011-2/$* result
 	touch $@
 
 bin/%:
@@ -16,6 +17,6 @@ bin/%:
 
 clean:
 	${MAKE} -C src clean
-	rm -rf ${tables}
+	rm -rf result
 
 .PHONY: all clean
