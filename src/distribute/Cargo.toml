@@ -6,3 +6,4 @@ authors = ["Ivan Ukhov <ivan.ukhov@gmail.com>"]
 [dependencies]
 arguments = "*"
 flate2 = "*"
+md5 = "*"
