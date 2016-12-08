@@ -4,8 +4,8 @@ set -e
 
 bin_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 data_path="${1}"
-database_path="${2}"
-table_name="${3}"
+table_name="${2}"
+database_path="${3}"
 column_indices="${4}"
 
 function join() {

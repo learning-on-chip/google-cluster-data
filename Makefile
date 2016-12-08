@@ -5,7 +5,7 @@ all: result/database.sqlite3
 result/database.sqlite3: $(patsubst %,result/%/.done,${TABLES})
 	mkdir -p result
 	for table in ${TABLES}; do \
-		./bin/convert.sh result/$${table} $@ $${table}; \
+		./bin/convert.sh result/$${table} $${table} $@; \
 	done
 
 result/%/.done: bin/gsutil

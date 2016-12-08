@@ -2,7 +2,8 @@
 
 set -e
 
-table_name="${1}"
+data_path="${1}"
+table_name="${2}"
 
 function execute() {
     echo "${2}" | sqlite3 "${1}"
@@ -38,6 +39,6 @@ case "${table_name}" in
         ;;
 esac
 
-for part_path in $(find ${table_name} -name '*.sqlite3' | sort); do
+for part_path in $(find ${data_path} -name '*.sqlite3' | sort); do
     ${table_name} "${part_path}"
 done
