@@ -12,10 +12,10 @@ google.sqlite3: $(addsuffix /.done,${tables})
 	touch $@
 
 bin/%:
-	${MAKE} -C tools $*
+	${MAKE} -C src $*
 
 clean:
-	${MAKE} -C tools clean
+	${MAKE} -C src clean
 	rm -rf ${tables}
 
 .PHONY: all clean
