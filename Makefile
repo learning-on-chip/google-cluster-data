@@ -16,7 +16,7 @@ result/task_usage/distribute/.done: $(patsubst result/task_usage/%.csv.gz,result
 	touch $@
 
 result/task_usage/distribute/.done_%: bin/distribute result/task_usage/.done
-	$< --input result/task_usage/$*.csv.gz --output result/task_usage/distribute --group 2 --selection 0,1,2,3,4,5;
+	$< --input result/task_usage/$*.csv.gz --output result/task_usage/distribute --group 2 --select 0,1,2,3,4,5;
 	touch $@
 
 bin/%:
