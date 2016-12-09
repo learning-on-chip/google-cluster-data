@@ -12,7 +12,7 @@ result/%/.done: bin/gsutil
 	$< -m cp -R gs://clusterdata-2011-2/$* result
 	touch $@
 
-result/task_usage/distribute/.done: $(patsubst result/task_usage/%.csv.gz,result/task_usage/.done_%,$(shell find result/task_usage -name '*.csv.gz'))
+result/task_usage/distribute/.done: $(patsubst result/task_usage/%.csv.gz,result/task_usage/distribute/.done_%,$(shell find result/task_usage -name '*.csv.gz'))
 	touch $@
 
 result/task_usage/distribute/.done_%: bin/distribute result/task_usage/.done
