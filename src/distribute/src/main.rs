@@ -27,7 +27,8 @@ fn main() {
     for line in reader.lines() {
         let line = ok!(line);
         let chunks = line.split(&split).collect::<Vec<_>>();
-        let directory = output.join(&digest(chunks[group])[..2]);
+        let digest = format!("{:x}", md5::compute(chunks[group].as_bytes()));
+        let directory = output.join(&digest[..2]);
         ok!(fs::create_dir_all(&directory));
         let output = directory.join(chunks[group]).with_extension("csv");
         let mut output = ok!(OpenOptions::new().append(true).create(true).open(output));
@@ -39,12 +40,4 @@ fn main() {
         }
         ok!(output.write_all("\n".as_bytes()));
     }
-}
-
-fn digest(data: &str) -> String {
-    let mut line = String::with_capacity(2 * 16);
-    for byte in md5::compute(data.as_bytes()).iter() {
-        line.push_str(&format!("{:02x}", byte));
-    }
-    line
 }
