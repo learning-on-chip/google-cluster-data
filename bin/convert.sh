@@ -9,32 +9,32 @@ database_path="${3}"
 column_indices="${4}"
 
 function join() {
-    local IFS="${1}"
-    shift
-    echo "$*"
+  local IFS="${1}"
+  shift
+  echo "$*"
 }
 
 function execute() {
-    echo "${2}" | sqlite3 "${1}"
+  echo "${2}" | sqlite3 "${1}"
 }
 
 i=0
 declare -a all_column_definitions
 while IFS=$'\n' read -r line_data; do
-    all_column_definitions[i]="${line_data}"
-    ((i++))
+  all_column_definitions[i]="${line_data}"
+  ((i++))
 done < <("${bin_path}/describe.py" ${table_name})
 
 if [ -z "${column_indices}" ]; then
-    column_count=${#all_column_definitions[@]}
-    column_indices=($(seq ${column_count}))
+  column_count=${#all_column_definitions[@]}
+  column_indices=($(seq ${column_count}))
 else
-    column_indices=(${column_indices})
-    column_count=${#column_indices[@]}
+  column_indices=(${column_indices})
+  column_count=${#column_indices[@]}
 fi
 
 for i in $(seq ${column_count}); do
-    column_definitions[${i} - 1]=${all_column_definitions[${column_indices[${i} - 1]} - 1]}
+  column_definitions[${i} - 1]=${all_column_definitions[${column_indices[${i} - 1]} - 1]}
 done
 
 temporary_path="${data_path}.tmp"
@@ -50,7 +50,7 @@ write_query="""
 """
 
 if [ ! -z "${database_path}" ]; then
-    execute "${database_path}" "${setup_query}"
+  execute "${database_path}" "${setup_query}"
 fi
 
 for part_path in $(find "${data_path}" -name '*.csv.gz' | sort); do
