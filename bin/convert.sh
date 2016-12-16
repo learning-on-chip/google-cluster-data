@@ -22,7 +22,7 @@ i=0
 declare -a all_column_definitions
 while IFS=$'\n' read -r line_data; do
   all_column_definitions[i]="${line_data}"
-  ((i++))
+  i=$((i + 1))
 done < <("${bin_path}/describe.py" ${table_name})
 
 if [ -z "${column_indices}" ]; then
