@@ -53,13 +53,25 @@ if [ ! -z "${database_path}" ]; then
   execute "${database_path}" "${setup_query}"
 fi
 
-for part_path in $(find "${data_path}" -name '*.csv.gz' | sort); do
-    echo "Processing ${part_path}..."
+for part_path in $(find "${data_path}" -name '*.csv*' | sort); do
+  echo "Processing ${part_path}..."
+  case "${part_path}" in
+  *.csv)
+    part_database_path="${part_path%.csv}.sqlite3"
+    cp "${part_path}" "${temporary_path}"
+    ;;
+  *.csv.gz)
+    part_database_path="${part_path%.csv.gz}.sqlite3"
     gunzip -c "${part_path}" | cut -d',' -f$(join ',' ${column_indices[@]}) > "${temporary_path}"
-    if [ ! -z "${database_path}" ]; then
-        execute "${database_path}" "${write_query}"
-    else
-        execute "${part_path%.csv.gz}.sqlite3" "${setup_query}${write_query}"
-    fi
-    rm "${temporary_path}"
+    ;;
+  *)
+    echo 'Error: found an unsupported format.' && exit 1
+    ;;
+  esac
+  if [ ! -z "${database_path}" ]; then
+    execute "${database_path}" "${write_query}"
+  else
+    execute "${part_database_path}" "${setup_query}${write_query}"
+  fi
+  rm "${temporary_path}"
 done
