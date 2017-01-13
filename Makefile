@@ -1,24 +1,27 @@
 TABLES ?= job_events task_events task_usage
-task_usage_distribute := result/task_usage/distribute
 
-all: result/database.sqlite3
+all:
+	@echo What?
 
-result/database.sqlite3: $(patsubst %,result/%/.done,${TABLES})
+result/all.sqlite3: $(patsubst %,result/%/.downloaded,${TABLES})
 	for table in ${TABLES}; do \
 		bin/convert.sh result/$${table} $${table} $@; \
 	done
 
-result/%/.done: bin/gsutil
+$(patsubst %,result/%.sqlite3,${TABLES}): result/%.sqlite3: result/%/.downloaded
+	bin/convert.sh result/$* $* $@
+
+$(patsubst %,result/%/.downloaded,${TABLES}): result/%/.downloaded: bin/gsutil
 	mkdir -p result
 	$< -m cp -R gs://clusterdata-2011-2/$* result
 	touch $@
 
-${task_usage_distribute}/.done: $(patsubst result/task_usage/%.csv.gz,${task_usage_distribute}/.done_%,$(shell find result/task_usage -name '*.csv.gz' | sort))
-	bin/convert.sh ${task_usage_distribute} task_usage "" "1 2 3 4 5 6"
+result/task_usage/distribute/.processed: $(patsubst result/task_usage/%.csv.gz,result/task_usage/distribute/.processed_%,$(shell find result/task_usage -name '*.csv.gz' | sort))
+	bin/convert.sh result/task_usage/distribute task_usage "" "1 2 3 4 5 6"
 	touch $@
 
-${task_usage_distribute}/.done_%: bin/distribute result/task_usage/.done
-	$< --input result/task_usage/$*.csv.gz --output ${task_usage_distribute} --group 2 --select 0,1,2,3,4,5
+result/task_usage/distribute/.processed_%: bin/distribute result/task_usage/.downloaded
+	$< --input result/task_usage/$*.csv.gz --output result/task_usage/distribute --group 2 --select 0,1,2,3,4,5
 	touch $@
 
 bin/%:
