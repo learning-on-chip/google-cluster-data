@@ -9,19 +9,22 @@ query = "SELECT COUNT(*) FROM `task_usage` GROUP BY `job ID`, `task index`"
 
 def main(data_path):
     count = 0
-    data = []
+    data = np.array([], dtype=np.int)
     pp.figure(facecolor='w', edgecolor='k')
     path_pattern = "{}/**/*.sqlite3".format(data_path)
-    for part_path in glob.glob(path_pattern, recursive=True):
+    for part_path in glob.glob(path_pattern):
         connection = sqlite3.connect(part_path)
         cursor = connection.cursor()
         cursor.execute(query)
-        data = np.append(data, np.array([row[0] for row in cursor]))
+        data = np.append(data, np.array([row[0] for row in cursor],
+                                        dtype=np.int))
         connection.close()
         count += 1
         if count % 1000 == 0:
             pp.clf()
-            pp.title("Processed {}".format(count))
+            pp.title("Processed {}, mean {}, max {}".format(count,
+                                                            int(np.mean(data)),
+                                                            np.max(data)))
             pp.hist(data[data < 200], bins=200)
             pp.pause(1e-3)
     pp.show()
