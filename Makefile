@@ -1,6 +1,9 @@
 TABLES ?= job_events task_events task_usage
 OUTPUT ?= output
 
+task_usage := ${OUTPUT}/task_usage
+task_usage_parts := $(shell find ${task_usage} -name '*.csv.gz' 2> /dev/null | sort)
+
 all:
 	@echo What?
 
@@ -17,12 +20,12 @@ $(patsubst %,${OUTPUT}/%/.downloaded,${TABLES}): ${OUTPUT}/%/.downloaded: bin/gs
 	$< -m cp -R gs://clusterdata-2011-2/$* ${OUTPUT}
 	touch $@
 
-${OUTPUT}/task_usage/distribute/.processed: $(patsubst ${OUTPUT}/task_usage/%.csv.gz,${OUTPUT}/task_usage/distribute/.processed_%,$(shell find ${OUTPUT}/task_usage -name '*.csv.gz' | sort))
-	bin/convert.sh ${OUTPUT}/task_usage/distribute task_usage "" "1 2 3 4 5 6"
+${task_usage}/distribute/.processed: $(patsubst ${task_usage}/%.csv.gz,${task_usage}/distribute/.processed_%,${task_usage_parts})
+	bin/convert.sh ${task_usage}/distribute task_usage "" "1 2 3 4 5 6"
 	touch $@
 
-${OUTPUT}/task_usage/distribute/.processed_%: bin/distribute ${OUTPUT}/task_usage/.downloaded
-	$< --input ${OUTPUT}/task_usage/$*.csv.gz --output ${OUTPUT}/task_usage/distribute --group 2 --select 0,1,2,3,4,5
+${task_usage}/distribute/.processed_%: bin/distribute ${task_usage}/.downloaded
+	$< --input ${task_usage}/$*.csv.gz --output ${task_usage}/distribute --group 2 --select 0,1,2,3,4,5
 	touch $@
 
 bin/%:
