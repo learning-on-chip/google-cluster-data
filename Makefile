@@ -1,27 +1,28 @@
 TABLES ?= job_events task_events task_usage
+OUTPUT ?= output
 
 all:
 	@echo What?
 
-result/all.sqlite3: $(patsubst %,result/%/.downloaded,${TABLES})
+${OUTPUT}/all.sqlite3: $(patsubst %,${OUTPUT}/%/.downloaded,${TABLES})
 	for table in ${TABLES}; do \
-		bin/convert.sh result/$${table} $${table} $@; \
+		bin/convert.sh ${OUTPUT}/$${table} $${table} $@; \
 	done
 
-$(patsubst %,result/%.sqlite3,${TABLES}): result/%.sqlite3: result/%/.downloaded
-	bin/convert.sh result/$* $* $@
+$(patsubst %,${OUTPUT}/%.sqlite3,${TABLES}): ${OUTPUT}/%.sqlite3: ${OUTPUT}/%/.downloaded
+	bin/convert.sh ${OUTPUT}/$* $* $@
 
-$(patsubst %,result/%/.downloaded,${TABLES}): result/%/.downloaded: bin/gsutil
-	mkdir -p result
-	$< -m cp -R gs://clusterdata-2011-2/$* result
+$(patsubst %,${OUTPUT}/%/.downloaded,${TABLES}): ${OUTPUT}/%/.downloaded: bin/gsutil
+	mkdir -p ${OUTPUT}
+	$< -m cp -R gs://clusterdata-2011-2/$* ${OUTPUT}
 	touch $@
 
-result/task_usage/distribute/.processed: $(patsubst result/task_usage/%.csv.gz,result/task_usage/distribute/.processed_%,$(shell find result/task_usage -name '*.csv.gz' | sort))
-	bin/convert.sh result/task_usage/distribute task_usage "" "1 2 3 4 5 6"
+${OUTPUT}/task_usage/distribute/.processed: $(patsubst ${OUTPUT}/task_usage/%.csv.gz,${OUTPUT}/task_usage/distribute/.processed_%,$(shell find ${OUTPUT}/task_usage -name '*.csv.gz' | sort))
+	bin/convert.sh ${OUTPUT}/task_usage/distribute task_usage "" "1 2 3 4 5 6"
 	touch $@
 
-result/task_usage/distribute/.processed_%: bin/distribute result/task_usage/.downloaded
-	$< --input result/task_usage/$*.csv.gz --output result/task_usage/distribute --group 2 --select 0,1,2,3,4,5
+${OUTPUT}/task_usage/distribute/.processed_%: bin/distribute ${OUTPUT}/task_usage/.downloaded
+	$< --input ${OUTPUT}/task_usage/$*.csv.gz --output ${OUTPUT}/task_usage/distribute --group 2 --select 0,1,2,3,4,5
 	touch $@
 
 bin/%:
@@ -29,6 +30,6 @@ bin/%:
 
 clean:
 	${MAKE} -C src clean
-	rm -rf result
+	rm -rf ${OUTPUT}
 
 .PHONY: all clean
