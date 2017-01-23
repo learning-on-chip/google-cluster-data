@@ -5,7 +5,7 @@ distribute: $(shell find distribute -name *.rs)
 	cargo install --force --root "${root}" --path distribute
 
 gsutil: gsutil/gsutil
-	ln -s "${current}/$<" "${root}/bin/gsutil"
+	ln -sf "${current}/$<" "${root}/bin/gsutil"
 
 gsutil/gsutil: gsutil.tar.gz
 	tar -xzf $<
