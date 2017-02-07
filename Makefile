@@ -20,12 +20,12 @@ $(patsubst %,${OUTPUT}/%/.downloaded,${TABLES}): ${OUTPUT}/%/.downloaded: bin/gs
 	$< -m cp -R gs://clusterdata-2011-2/$* ${OUTPUT}
 	touch $@
 
-${task_usage}/distribute/.processed: $(patsubst ${task_usage}/%.csv.gz,${task_usage}/distribute/.processed_%,${task_usage_parts})
-	bin/convert.sh ${task_usage}/distribute task_usage "" "1 2 3 4 5 6"
+${task_usage}/distribution/.processed: $(patsubst ${task_usage}/%.csv.gz,${task_usage}/distribution/.processed_%,${task_usage_parts})
+	bin/convert.sh ${task_usage}/distribution task_usage "" "1 2 3 4 5 6"
 	touch $@
 
-${task_usage}/distribute/.processed_%: bin/distribute ${task_usage}/.downloaded
-	$< --input ${task_usage}/$*.csv.gz --output ${task_usage}/distribute --group 2 --select 0,1,2,3,4,5
+${task_usage}/distribution/.processed_%: bin/distribute ${task_usage}/.downloaded
+	$< --input ${task_usage}/$*.csv.gz --output ${task_usage}/distribution --group 2 --select 0,1,2,3,4,5
 	touch $@
 
 bin/%:
