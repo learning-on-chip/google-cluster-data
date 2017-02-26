@@ -56,7 +56,6 @@ def describe(name):
     raise Exception('the table is unknown')
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        raise Exception('expected an argument')
+    assert(len(sys.argv) == 2)
     for line in describe(sys.argv[1]):
         print(line)
