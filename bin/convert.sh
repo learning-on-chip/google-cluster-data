@@ -23,7 +23,7 @@ declare -a all_column_definitions
 while IFS=$'\n' read -r line_data; do
   all_column_definitions[i]="${line_data}"
   i=$((i + 1))
-done < <("${bin_path}/describe.py" ${table_name})
+done < <("${bin_path}/describe" ${table_name})
 
 if [ -z "${column_indices}" ]; then
   column_count=${#all_column_definitions[@]}
