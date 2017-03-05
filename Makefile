@@ -9,11 +9,11 @@ all:
 
 ${OUTPUT}/all.sqlite3: $(patsubst %,${OUTPUT}/%/.downloaded,${TABLES})
 	for table in ${TABLES}; do \
-		bin/convert.sh ${OUTPUT}/$${table} $${table} $@; \
+		bin/convert ${OUTPUT}/$${table} $${table} $@; \
 	done
 
 $(patsubst %,${OUTPUT}/%.sqlite3,${TABLES}): ${OUTPUT}/%.sqlite3: ${OUTPUT}/%/.downloaded
-	bin/convert.sh ${OUTPUT}/$* $* $@
+	bin/convert ${OUTPUT}/$* $* $@
 
 $(patsubst %,${OUTPUT}/%/.downloaded,${TABLES}): ${OUTPUT}/%/.downloaded: bin/gsutil
 	mkdir -p ${OUTPUT}
@@ -21,7 +21,7 @@ $(patsubst %,${OUTPUT}/%/.downloaded,${TABLES}): ${OUTPUT}/%/.downloaded: bin/gs
 	touch $@
 
 ${task_usage}/distribution/.processed: $(patsubst ${task_usage}/%.csv.gz,${task_usage}/distribution/.processed_%,${task_usage_parts})
-	bin/convert.sh ${task_usage}/distribution task_usage "" "1 2 3 4 5 6"
+	bin/convert ${task_usage}/distribution task_usage "" "1 2 3 4 5 6"
 	touch $@
 
 ${task_usage}/distribution/.processed_%: bin/distribute ${task_usage}/.downloaded
