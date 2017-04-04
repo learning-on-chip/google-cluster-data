@@ -1,29 +1,43 @@
-URL ?= gs://clusterdata-2011-2
-OUTPUT ?= output
+ifndef TABLE
+$(error TABLE should be defined)
+endif
 
-tables := job_events task_events task_usage
-task_usage := ${OUTPUT}/task_usage
 task_usage_group := 2
+
+job_events_select := 0 2 3 4 7
 task_usage_select := 0 1 2 3 4 5
-task_usage_parts := $(shell find "${task_usage}" -name '*.csv.gz' 2> /dev/null | sort)
 
-all:
-	@echo What?
+OUTPUT ?= output
+GROUP ?= ${${TABLE}_group}
+SELECT ?= ${${TABLE}_select}
 
-$(patsubst %,${OUTPUT}/%.sqlite3,${tables}): ${OUTPUT}/%.sqlite3: ${OUTPUT}/%/.downloaded
-	bin/convert "${OUTPUT}/$*" "$*" "$@"
+parts := $(shell find "${OUTPUT}/${TABLE}" -name '*.csv.gz' 2> /dev/null | sort)
+processed_parts := $(patsubst ${OUTPUT}/${TABLE}/%.csv.gz,${OUTPUT}/${TABLE}/distribution/.processed_%,${parts})
 
-$(patsubst %,${OUTPUT}/%/.downloaded,${tables}): ${OUTPUT}/%/.downloaded: bin/gsutil
+convert: ${OUTPUT}/${TABLE}.sqlite3
+
+download: ${OUTPUT}/${TABLE}/.downloaded
+
+distribute: ${OUTPUT}/${TABLE}/distribution/.processed
+
+${OUTPUT}/${TABLE}.sqlite3: bin/convert ${OUTPUT}/${TABLE}/.downloaded
+	$< "${OUTPUT}/${TABLE}" "${TABLE}" "$@" "${SELECT}"
+
+${OUTPUT}/${TABLE}/distribution/.processed: bin/convert ${processed_parts}
+	$< "${OUTPUT}/${TABLE}/distribution" "${TABLE}" '' "${SELECT}"
+	touch "$@"
+
+${OUTPUT}/${TABLE}/distribution/.processed_%: bin/distribute ${OUTPUT}/${TABLE}/.downloaded
+	$< \
+		--input "${OUTPUT}/${TABLE}/$*.csv.gz" \
+		--output "${OUTPUT}/${TABLE}/distribution" \
+		--group "${GROUP}" \
+		--select "${SELECT}"
+	touch "$@"
+
+${OUTPUT}/${TABLE}/.downloaded: bin/gsutil
 	mkdir -p "${OUTPUT}"
-	$< -m cp -R "${URL}/$*" "${OUTPUT}"
-	touch "$@"
-
-${task_usage}/distribution/.processed: $(patsubst ${task_usage}/%.csv.gz,${task_usage}/distribution/.processed_%,${task_usage_parts})
-	bin/convert "${task_usage}/distribution" task_usage '' "${task_usage_select}"
-	touch "$@"
-
-${task_usage}/distribution/.processed_%: bin/distribute ${task_usage}/.downloaded
-	$< --input "${task_usage}/$*.csv.gz" --output "${task_usage}/distribution" --group ${task_usage_group} --select "${task_usage_select}"
+	$< -m cp -R "gs://clusterdata-2011-2/${TABLE}" "${OUTPUT}"
 	touch "$@"
 
 bin/%:
