@@ -14,7 +14,7 @@ macro_rules! ok(($result:expr) => ($result.unwrap()));
 fn main() {
     let arguments = ok!(arguments::parse(env::args()));
     let input = ok!(arguments.get::<String>("input"));
-    let split = arguments.get::<String>("split").unwrap_or(",".to_string());
+    let split = arguments.get::<String>("split").unwrap_or(" ".to_string());
     let group = ok!(arguments.get::<usize>("group"));
     let select = ok!(arguments.get::<String>("select")).split(&split)
                                                        .map(|i| ok!(i.parse::<usize>()))

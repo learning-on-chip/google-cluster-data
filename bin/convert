@@ -8,14 +8,18 @@ table_name="${2}"
 database_path="${3}"
 column_indices="${4}"
 
+function execute() {
+  echo "${2}" | sqlite3 "${1}"
+}
+
 function join() {
   local IFS="${1}"
   shift
   echo "$*"
 }
 
-function execute() {
-  echo "${2}" | sqlite3 "${1}"
+function range() {
+  echo "$(seq 0 $((${1} - 1)))"
 }
 
 i=0
@@ -27,14 +31,15 @@ done < <("${bin_path}/describe" ${table_name})
 
 if [ -z "${column_indices}" ]; then
   column_count=${#all_column_definitions[@]}
-  column_indices=($(seq ${column_count}))
+  column_indices=($(range ${column_count}))
 else
   column_indices=(${column_indices})
   column_count=${#column_indices[@]}
 fi
 
-for i in $(seq ${column_count}); do
-  column_definitions[${i} - 1]=${all_column_definitions[${column_indices[${i} - 1]} - 1]}
+for i in $(range ${column_count}); do
+  column_definitions[${i}]=${all_column_definitions[${column_indices[${i}]}]}
+  column_indices[${i}]=$((${column_indices[${i}]} + 1))
 done
 
 temporary_path="${data_path}.tmp"
