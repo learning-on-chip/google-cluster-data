@@ -6,61 +6,85 @@ import os
 import shutil
 import subprocess
 
-def describe(table):
-    if table == 'job_events':
-        return [
-            '`time` INTEGER NOT NULL',
-            '`missing info` INTEGER',
-            '`job ID` INTEGER NOT NULL',
-            '`event type` INTEGER NOT NULL',
-            '`user` TEXT',
-            '`scheduling class` INTEGER',
-            '`job name` TEXT',
-            '`logical job name` TEXT',
-        ]
-    elif table == 'task_events':
-        return [
-            '`time` INTEGER NOT NULL',
-            '`missing info` INTEGER',
-            '`job ID` INTEGER NOT NULL',
-            '`task index` INTEGER NOT NULL',
-            '`machine ID` INTEGER',
-            '`event type` INTEGER NOT NULL',
-            '`user` TEXT',
-            '`scheduling class` INTEGER',
-            '`priority` INTEGER NOT NULL',
-            '`CPU request` REAL',
-            '`memory request` REAL',
-            '`disk space request` REAL',
-            '`different machines restriction` INTEGER',
-        ]
-    elif table == 'task_usage':
-        return [
-            '`start time` INTEGER NOT NULL',
-            '`end time` INTEGER NOT NULL',
-            '`job ID` INTEGER NOT NULL',
-            '`task index` INTEGER NOT NULL',
-            '`machine ID` INTEGER NOT NULL',
-            '`CPU rate` REAL',
-            '`canonical memory usage` REAL',
-            '`assigned memory usage` REAL',
-            '`unmapped page cache` REAL',
-            '`total page cache` REAL',
-            '`maximum memory usage` REAL',
-            '`disk IO time` REAL',
-            '`local disk space usage` REAL',
-            '`maximum CPU rate` REAL',
-            '`maximum disk IO time` REAL',
-            '`cycles per instruction` REAL',
-            '`memory accesses per instruction` REAL',
-            '`sample portion` REAL',
-            '`aggregation type` INTEGER',
-            '`sampled CPU usage` REAL',
-        ]
-    raise Exception('the table is unknown')
 
-def query(path, code):
-    run('echo "{}" | sqlite3 "{}"'.format(code.replace('`', '\`'), path))
+class SQLite:
+    def __init__(self, table, select):
+        columns = SQLite._describe(table)
+        if select is not None:
+            columns = [columns[i] for i in select]
+        self.setup_code = \
+            'DROP TABLE IF EXISTS `{}`;\n'.format(table) + \
+            'CREATE TABLE `{}` ({});\n'.format(table, ', '.join(columns))
+        self.write_code = \
+            '.mode csv\n' + \
+            '.import {} ' + table
+        self.seen_paths = {}
+
+    def process(self, input_path, output_path):
+        if output_path is None:
+            output_path = input_path.replace('.csv', '.sqlite3')
+        code = self.write_code.format(input_path)
+        if output_path not in self.seen_paths:
+            code = self.setup_code + code
+            self.seen_paths[output_path] = True
+        SQLite._query(output_path, code)
+
+    def _describe(table):
+        if table == 'job_events':
+            return [
+                '`time` INTEGER NOT NULL',
+                '`missing info` INTEGER',
+                '`job ID` INTEGER NOT NULL',
+                '`event type` INTEGER NOT NULL',
+                '`user` TEXT',
+                '`scheduling class` INTEGER',
+                '`job name` TEXT',
+                '`logical job name` TEXT',
+            ]
+        elif table == 'task_events':
+            return [
+                '`time` INTEGER NOT NULL',
+                '`missing info` INTEGER',
+                '`job ID` INTEGER NOT NULL',
+                '`task index` INTEGER NOT NULL',
+                '`machine ID` INTEGER',
+                '`event type` INTEGER NOT NULL',
+                '`user` TEXT',
+                '`scheduling class` INTEGER',
+                '`priority` INTEGER NOT NULL',
+                '`CPU request` REAL',
+                '`memory request` REAL',
+                '`disk space request` REAL',
+                '`different machines restriction` INTEGER',
+            ]
+        elif table == 'task_usage':
+            return [
+                '`start time` INTEGER NOT NULL',
+                '`end time` INTEGER NOT NULL',
+                '`job ID` INTEGER NOT NULL',
+                '`task index` INTEGER NOT NULL',
+                '`machine ID` INTEGER NOT NULL',
+                '`CPU rate` REAL',
+                '`canonical memory usage` REAL',
+                '`assigned memory usage` REAL',
+                '`unmapped page cache` REAL',
+                '`total page cache` REAL',
+                '`maximum memory usage` REAL',
+                '`disk IO time` REAL',
+                '`local disk space usage` REAL',
+                '`maximum CPU rate` REAL',
+                '`maximum disk IO time` REAL',
+                '`cycles per instruction` REAL',
+                '`memory accesses per instruction` REAL',
+                '`sample portion` REAL',
+                '`aggregation type` INTEGER',
+                '`sampled CPU usage` REAL',
+            ]
+        raise Exception('found an unknown table')
+
+    def _query(path, code):
+        run('echo "{}" | sqlite3 "{}"'.format(code.replace('`', '\`'), path))
+
 
 def run(command):
     status, _ = subprocess.getstatusoutput(command)
@@ -68,44 +92,26 @@ def run(command):
         raise Exception('failed to run a command')
 
 def main(input_path, table, select, output_path):
-    interlocutor_path = input_path + '.tmp'
-    columns = describe(table)
-    if select is None:
-        select = list(range(len(columns)))
-    else:
+    if select is not None:
         select = [int(i) for i in select.split(' ')]
-        columns = [columns[i] for i in select]
-    setup_query = [
-        'DROP TABLE IF EXISTS `{table}`;',
-        'CREATE TABLE `{table}` ({columns});',
-    ]
-    setup_query = '\n'.join(setup_query).format(
-        table=table, columns=', '.join(columns))
-    write_query = [
-        '.mode csv',
-        '.import {path} {table}',
-    ]
-    write_query = '\n'.join(write_query).format(
-        table=table, path=interlocutor_path)
-    if output_path is not None:
-        query(output_path, setup_query)
-    for part_path in sorted(glob.glob(os.path.join(input_path, '**/*.csv*'),
-                                      recursive=True)):
+    converter = SQLite(table, select)
+    pattern = os.path.join(input_path, '**/*.csv*')
+    for part_path in sorted(glob.glob(pattern, recursive=True)):
         print('Processing {}...'.format(part_path))
         if part_path.endswith('.csv'):
-            shutil.copyfile(part_path, interlocutor_path)
+            converter.process(part_path, output_path)
         elif part_path.endswith('.csv.gz'):
-            fields = [str(i + 1) for i in select]
-            run('gunzip -c "{}" | cut -d"," -f{} > "{}"'.format(
-                part_path, ','.join(fields), interlocutor_path))
+            temporary_path = part_path.replace('.gz', '')
+            if select is None:
+                run('gunzip -c "{}" > "{}"'.format(part_path, temporary_path))
+            else:
+                run('gunzip -c "{}" | cut -d"," -f{} > "{}"'.format(
+                    part_path, ','.join([str(i + 1) for i in select]),
+                    temporary_path))
+            converter.process(temporary_path, output_path)
+            os.remove(temporary_path)
         else:
             raise Exception('found an unsupported format')
-        if output_path is not None:
-            query(output_path, write_query)
-        else:
-            query(os.path.splitext(part_path)[0] + '.sqlite3',
-                  setup_query + '\n' + write_query)
-        os.remove(interlocutor_path)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
