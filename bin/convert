@@ -1,82 +1,117 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-set -e
+import argparse
+import glob
+import os
+import shutil
+import subprocess
 
-bin_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-data_path="${1}"
-table_name="${2}"
-database_path="${3}"
-column_indices="${4}"
+def describe(table):
+    if table == 'job_events':
+        return [
+            '`time` INTEGER NOT NULL',
+            '`missing info` INTEGER',
+            '`job ID` INTEGER NOT NULL',
+            '`event type` INTEGER NOT NULL',
+            '`user` TEXT',
+            '`scheduling class` INTEGER',
+            '`job name` TEXT',
+            '`logical job name` TEXT',
+        ]
+    elif table == 'task_events':
+        return [
+            '`time` INTEGER NOT NULL',
+            '`missing info` INTEGER',
+            '`job ID` INTEGER NOT NULL',
+            '`task index` INTEGER NOT NULL',
+            '`machine ID` INTEGER',
+            '`event type` INTEGER NOT NULL',
+            '`user` TEXT',
+            '`scheduling class` INTEGER',
+            '`priority` INTEGER NOT NULL',
+            '`CPU request` REAL',
+            '`memory request` REAL',
+            '`disk space request` REAL',
+            '`different machines restriction` INTEGER',
+        ]
+    elif table == 'task_usage':
+        return [
+            '`start time` INTEGER NOT NULL',
+            '`end time` INTEGER NOT NULL',
+            '`job ID` INTEGER NOT NULL',
+            '`task index` INTEGER NOT NULL',
+            '`machine ID` INTEGER NOT NULL',
+            '`CPU rate` REAL',
+            '`canonical memory usage` REAL',
+            '`assigned memory usage` REAL',
+            '`unmapped page cache` REAL',
+            '`total page cache` REAL',
+            '`maximum memory usage` REAL',
+            '`disk IO time` REAL',
+            '`local disk space usage` REAL',
+            '`maximum CPU rate` REAL',
+            '`maximum disk IO time` REAL',
+            '`cycles per instruction` REAL',
+            '`memory accesses per instruction` REAL',
+            '`sample portion` REAL',
+            '`aggregation type` INTEGER',
+            '`sampled CPU usage` REAL',
+        ]
+    raise Exception('the table is unknown')
 
-function execute() {
-  echo "${2}" | sqlite3 "${1}"
-}
+def query(path, code):
+    run('echo "{}" | sqlite3 "{}"'.format(code.replace('`', '\`'), path))
 
-function join() {
-  local IFS="${1}"
-  shift
-  echo "$*"
-}
+def run(command):
+    status, _ = subprocess.getstatusoutput(command)
+    if status != 0:
+        raise Exception('failed to run a command')
 
-function range() {
-  echo "$(seq 0 $((${1} - 1)))"
-}
+def main(input_path, table, select, output_path):
+    interlocutor_path = input_path + '.tmp'
+    columns = describe(table)
+    if select is None:
+        select = list(range(len(columns)))
+    else:
+        select = [int(i) for i in select.split(' ')]
+        columns = [columns[i] for i in select]
+    setup_query = [
+        'DROP TABLE IF EXISTS `{table}`;',
+        'CREATE TABLE `{table}` ({columns});',
+    ]
+    setup_query = '\n'.join(setup_query).format(
+        table=table, columns=', '.join(columns))
+    write_query = [
+        '.mode csv',
+        '.import {path} {table}',
+    ]
+    write_query = '\n'.join(write_query).format(
+        table=table, path=interlocutor_path)
+    if output_path is not None:
+        query(output_path, setup_query)
+    for part_path in sorted(glob.glob(os.path.join(input_path, '**/*.csv*'),
+                                      recursive=True)):
+        print('Processing {}...'.format(part_path))
+        if part_path.endswith('.csv'):
+            shutil.copyfile(part_path, interlocutor_path)
+        elif part_path.endswith('.csv.gz'):
+            fields = [str(i + 1) for i in select]
+            run('gunzip -c "{}" | cut -d"," -f{} > "{}"'.format(
+                part_path, ','.join(fields), interlocutor_path))
+        else:
+            raise Exception('found an unsupported format')
+        if output_path is not None:
+            query(output_path, write_query)
+        else:
+            query(os.path.splitext(part_path)[0] + '.sqlite3',
+                  setup_query + '\n' + write_query)
+        os.remove(interlocutor_path)
 
-i=0
-declare -a all_column_definitions
-while IFS=$'\n' read -r line_data; do
-  all_column_definitions[i]="${line_data}"
-  i=$((i + 1))
-done < <("${bin_path}/describe" ${table_name})
-
-if [ -z "${column_indices}" ]; then
-  column_count=${#all_column_definitions[@]}
-  column_indices=($(range ${column_count}))
-else
-  column_indices=(${column_indices})
-  column_count=${#column_indices[@]}
-fi
-
-for i in $(range ${column_count}); do
-  column_definitions[${i}]=${all_column_definitions[${column_indices[${i}]}]}
-  column_indices[${i}]=$((${column_indices[${i}]} + 1))
-done
-
-temporary_path="${data_path}.tmp"
-
-setup_query="""
-DROP TABLE IF EXISTS \`${table_name}\`;
-CREATE TABLE \`${table_name}\` ($(join ', ' "${column_definitions[@]}"));
-"""
-
-write_query="""
-.mode csv
-.import ${temporary_path} ${table_name}
-"""
-
-if [ ! -z "${database_path}" ]; then
-  execute "${database_path}" "${setup_query}"
-fi
-
-for part_path in $(find "${data_path}" -name '*.csv*' | sort); do
-  echo "Processing ${part_path}..."
-  case "${part_path}" in
-  *.csv)
-    part_database_path="${part_path%.csv}.sqlite3"
-    cp "${part_path}" "${temporary_path}"
-    ;;
-  *.csv.gz)
-    part_database_path="${part_path%.csv.gz}.sqlite3"
-    gunzip -c "${part_path}" | cut -d',' -f$(join ',' ${column_indices[@]}) > "${temporary_path}"
-    ;;
-  *)
-    echo 'Error: found an unsupported format.' && exit 1
-    ;;
-  esac
-  if [ ! -z "${database_path}" ]; then
-    execute "${database_path}" "${write_query}"
-  else
-    execute "${part_database_path}" "${setup_query}${write_query}"
-  fi
-  rm "${temporary_path}"
-done
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input', required=True)
+    parser.add_argument('--table', required=True)
+    parser.add_argument('--select')
+    parser.add_argument('--output')
+    arguments = parser.parse_args()
+    main(arguments.input, arguments.table, arguments.select, arguments.output)

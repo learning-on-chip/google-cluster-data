@@ -21,18 +21,25 @@ download: ${OUTPUT}/${TABLE}/.downloaded
 distribute: ${OUTPUT}/${TABLE}/distribution/.processed
 
 ${OUTPUT}/${TABLE}.sqlite3: bin/convert ${OUTPUT}/${TABLE}/.downloaded
-	$< "${OUTPUT}/${TABLE}" "${TABLE}" "$@" "${SELECT}"
+	$< \
+		--input "${OUTPUT}/${TABLE}" \
+		--table "${TABLE}" \
+		--select "${SELECT}" \
+		--output "$@"
 
 ${OUTPUT}/${TABLE}/distribution/.processed: bin/convert ${processed_parts}
-	$< "${OUTPUT}/${TABLE}/distribution" "${TABLE}" '' "${SELECT}"
+	$< \
+		--input "${OUTPUT}/${TABLE}/distribution" \
+		--table "${TABLE}" \
+		--select "${SELECT}"
 	touch "$@"
 
 ${OUTPUT}/${TABLE}/distribution/.processed_%: bin/distribute ${OUTPUT}/${TABLE}/.downloaded
 	$< \
 		--input "${OUTPUT}/${TABLE}/$*.csv.gz" \
-		--output "${OUTPUT}/${TABLE}/distribution" \
 		--group "${GROUP}" \
-		--select "${SELECT}"
+		--select "${SELECT}" \
+		--output "${OUTPUT}/${TABLE}/distribution"
 	touch "$@"
 
 ${OUTPUT}/${TABLE}/.downloaded: bin/gsutil
