@@ -8,30 +8,33 @@ job_events_select := 0,2,3,4,7
 task_usage_select := 0,1,5
 
 OUTPUT ?= output
+FORMAT ?= sqlite3
 GROUP ?= ${${TABLE}_group}
 SELECT ?= ${${TABLE}_select}
 
 parts := $(shell find "${OUTPUT}/${TABLE}" -name '*.csv.gz' 2> /dev/null | sort)
 processed_parts := $(patsubst ${OUTPUT}/${TABLE}/%.csv.gz,${OUTPUT}/${TABLE}/distribution/.processed_%,${parts})
 
-convert: ${OUTPUT}/${TABLE}.sqlite3
+convert: ${OUTPUT}/${TABLE}.${FORMAT}
 
 download: ${OUTPUT}/${TABLE}/.downloaded
 
 distribute: ${OUTPUT}/${TABLE}/distribution/.processed
 
-${OUTPUT}/${TABLE}.sqlite3: bin/convert ${OUTPUT}/${TABLE}/.downloaded
+${OUTPUT}/${TABLE}.${FORMAT}: bin/convert ${OUTPUT}/${TABLE}/.downloaded
 	$< \
 		--input "${OUTPUT}/${TABLE}" \
 		--table "${TABLE}" \
 		--select "${SELECT}" \
-		--output "$@"
+		--output "$@" \
+		--format "${FORMAT}"
 
 ${OUTPUT}/${TABLE}/distribution/.processed: bin/convert ${processed_parts}
 	$< \
 		--input "${OUTPUT}/${TABLE}/distribution" \
 		--table "${TABLE}" \
-		--select "${SELECT}"
+		--select "${SELECT}" \
+		--format "${FORMAT}"
 	touch "$@"
 
 ${OUTPUT}/${TABLE}/distribution/.processed_%: bin/distribute ${OUTPUT}/${TABLE}/.downloaded

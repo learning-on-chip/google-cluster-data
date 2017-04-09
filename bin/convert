@@ -7,9 +7,9 @@ import shutil
 import subprocess
 
 
-class SQLite:
+class SQLite3:
     def __init__(self, table, select):
-        columns = SQLite._describe(table)
+        columns = SQLite3._describe(table)
         if select is not None:
             columns = [columns[i] for i in select]
         self.setup_code = \
@@ -27,7 +27,7 @@ class SQLite:
         if output_path not in self.seen_paths:
             code = self.setup_code + code
             self.seen_paths[output_path] = True
-        SQLite._query(output_path, code)
+        SQLite3._query(output_path, code)
 
     def _describe(table):
         if table == 'job_events':
@@ -91,10 +91,13 @@ def run(command):
     if status != 0:
         raise Exception('failed to run a command')
 
-def main(input_path, table, select, output_path):
+def main(input_path, table, select, output_path, format):
     if select is not None:
         select = [int(i) for i in select.split(',')]
-    converter = SQLite(table, select)
+    if format == 'sqlite3':
+        converter = SQLite3(table, select)
+    else:
+        raise Exception('found an unsupported format')
     pattern = os.path.join(input_path, '**/*.csv*')
     for part_path in sorted(glob.glob(pattern, recursive=True)):
         print('Processing {}...'.format(part_path))
@@ -119,5 +122,7 @@ if __name__ == '__main__':
     parser.add_argument('--table', required=True)
     parser.add_argument('--select')
     parser.add_argument('--output')
+    parser.add_argument('--format', required=True)
     arguments = parser.parse_args()
-    main(arguments.input, arguments.table, arguments.select, arguments.output)
+    main(arguments.input, arguments.table, arguments.select, arguments.output,
+         argument.format)
