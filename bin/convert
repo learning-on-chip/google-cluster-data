@@ -125,4 +125,4 @@ if __name__ == '__main__':
     parser.add_argument('--format', required=True)
     arguments = parser.parse_args()
     main(arguments.input, arguments.table, arguments.select, arguments.output,
-         argument.format)
+         arguments.format)

@@ -2,10 +2,10 @@ ifndef TABLE
 $(error TABLE should be defined)
 endif
 
-task_usage_group := 2,3
+task_usage_group := 2
 
 job_events_select := 0,2,3,4,7
-task_usage_select := 0,1,5
+task_usage_select := 0,2,3,5
 
 OUTPUT ?= output
 FORMAT ?= sqlite3

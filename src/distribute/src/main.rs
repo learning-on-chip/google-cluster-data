@@ -10,7 +10,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 
 const DEFAULT_DELIMITER: &'static str = ",";
-const DEFAULT_DEPTH: usize = 4;
+const DEFAULT_GRANULARITY: usize = 2;
 
 macro_rules! ok(($result:expr) => ($result.unwrap()));
 
@@ -24,7 +24,7 @@ fn main() {
     let select = ok!(arguments.get::<String>("select")).split(&delimiter)
                                                        .map(|i| ok!(i.parse::<usize>()))
                                                        .collect::<Vec<_>>();
-    let depth = arguments.get::<usize>("depth").unwrap_or(DEFAULT_DEPTH);
+    let granularity = arguments.get::<usize>("granularity").unwrap_or(DEFAULT_GRANULARITY);
     let output = ok!(arguments.get::<String>("output"));
     let output = Path::new(&output);
     let mut input = ok!(File::open(input));
@@ -41,7 +41,7 @@ fn main() {
             name.push_str(&chunks[j]);
         }
         let digest = format!("{:x}", md5::compute(name.as_bytes()));
-        let directory = output.join(&digest[..depth]);
+        let directory = output.join(&digest[..granularity]);
         ok!(fs::create_dir_all(&directory));
         let output = directory.join(name).with_extension("csv");
         let mut output = ok!(OpenOptions::new().append(true).create(true).open(output));
