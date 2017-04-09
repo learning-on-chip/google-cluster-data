@@ -93,7 +93,7 @@ def run(command):
 
 def main(input_path, table, select, output_path):
     if select is not None:
-        select = [int(i) for i in select.split(' ')]
+        select = [int(i) for i in select.split(',')]
     converter = SQLite(table, select)
     pattern = os.path.join(input_path, '**/*.csv*')
     for part_path in sorted(glob.glob(pattern, recursive=True)):
