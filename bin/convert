@@ -98,7 +98,7 @@ def main(input_path, table, select, output_path, format):
         format = SQLite3(table, select)
     else:
         raise Exception('found an unsupported format')
-    pattern = os.path.join(input_path, '**/*.csv*')
+    pattern = os.path.join(input_path, '**', '*.csv*')
     for part_path in sorted(glob.glob(pattern, recursive=True)):
         print('Processing {}...'.format(part_path))
         if part_path.endswith('.csv'):
