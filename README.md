@@ -1,7 +1,7 @@
 # Google Cluster Data
 
-The repository contains scripts for dumping Google’s [cluster data][data]. The
-following tables are currently processed:
+The repository contains scripts for processing Google’s [cluster data][data].
+The following tables are currently processed:
 
 * `job_events`,
 * `task_events`, and
